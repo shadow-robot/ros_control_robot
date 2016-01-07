@@ -47,9 +47,15 @@
 #include <pthread.h>
 #include <numeric>
 
-#include "ros_ethercat_model/ros_ethercat.hpp"
 #include <std_msgs/Float64.h>
 #include <diagnostic_updater/DiagnosticStatusWrapper.h>
+#include <combined_robot_hw/combined_robot_hw.h>
+#include <boost/accumulators/accumulators.hpp>
+#include <boost/accumulators/statistics/stats.hpp>
+#include <boost/accumulators/statistics/max.hpp>
+#include <boost/accumulators/statistics/mean.hpp>
+#include <realtime_tools/realtime_publisher.h>
+#include <diagnostic_msgs/DiagnosticArray.h>
 
 using namespace boost::accumulators;
 using boost::ptr_vector;
@@ -196,22 +202,22 @@ static inline double now()
   return double(n.tv_nsec) / SEC_2_NSEC + n.tv_sec;
 }
 
-void *diagnosticLoop(void *args)
-{
-  ptr_vector<EthercatHardware>* ec = (ptr_vector<EthercatHardware>*) args;
-  struct timespec tick;
-  clock_gettime(CLOCK_MONOTONIC, &tick);
-  while (!g_quit)
-  {
-    for (ptr_vector<EthercatHardware>::iterator eh = ec->begin(); eh != ec->end(); ++eh)
-    {
-      eh->collectDiagnostics();
-    }
-    ++tick.tv_sec;
-    clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &tick, NULL);
-  }
-  return NULL;
-}
+//void *diagnosticLoop(void *args)
+//{
+//  ptr_vector<EthercatHardware>* ec = (ptr_vector<EthercatHardware>*) args;
+//  struct timespec tick;
+//  clock_gettime(CLOCK_MONOTONIC, &tick);
+//  while (!g_quit)
+//  {
+//    for (ptr_vector<EthercatHardware>::iterator eh = ec->begin(); eh != ec->end(); ++eh)
+//    {
+//      eh->collectDiagnostics();
+//    }
+//    ++tick.tv_sec;
+//    clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &tick, NULL);
+//  }
+//  return NULL;
+//}
 
 static void timespecInc(struct timespec &tick, int nsec)
 {
@@ -311,20 +317,21 @@ void *controlLoop(void *)
 
   // Initialize the hardware interface
   ros::NodeHandle nh;
-  RosEthercat seth(nh, g_options.interface_, g_options.allow_unprogrammed_, root);
+  CombinedRobotHardware combined_robot;
+  combined_robot.init(nh, nh);
 
   // Create controller manager
-  controller_manager::ControllerManager cm(&seth);
+  controller_manager::ControllerManager cm(&combined_robot);
 
   // Publish one-time before entering real-time to pre-allocate message vectors
   publishDiagnostics(publisher);
 
   //Start Non-realtime diagnostic thread
   static pthread_t diagnosticThread;
-  int rv = pthread_create(&diagnosticThread, NULL, diagnosticLoop, &seth.ethercat_hardware_);
-  if (rv != 0)
-    return terminate_control(&publisher, rtpublisher,
-                             "Unable to create control thread: rv = %s", boost::lexical_cast<string>(rv).c_str());
+//  int rv = pthread_create(&diagnosticThread, NULL, diagnosticLoop, &seth.ethercat_hardware_);
+//  if (rv != 0)
+//    return terminate_control(&publisher, rtpublisher,
+//                             "Unable to create control thread: rv = %s", boost::lexical_cast<string>(rv).c_str());
 
   // Set to realtime scheduler for this thread
   struct sched_param thread_param;
@@ -353,10 +360,10 @@ void *controlLoop(void *)
     double start = now();
 
     ros::Time this_moment(tick.tv_sec, tick.tv_nsec);
-    seth.read(this_moment);
+    combined_robot.read(this_moment);
     double after_ec = now();
     cm.update(this_moment, durp);
-    seth.write(this_moment);
+    combined_robot.write(this_moment);
     double end = now();
 
     g_stats.ec_acc(after_ec - start);
@@ -446,7 +453,7 @@ void *controlLoop(void *)
   }
 
   // Shutdown all of the motors on exit
-  seth.shutdown();
+//  seth.shutdown();
 
   publisher.stop();
   delete rtpublisher;
