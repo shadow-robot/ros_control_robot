@@ -50,6 +50,7 @@
 #include <std_msgs/Float64.h>
 #include <diagnostic_updater/DiagnosticStatusWrapper.h>
 #include <combined_robot_hw/combined_robot_hw.h>
+#include <controller_manager/controller_manager.h>
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics/stats.hpp>
 #include <boost/accumulators/statistics/max.hpp>
@@ -276,9 +277,9 @@ void *controlLoop(void *)
   TiXmlElement *root;
   TiXmlElement *root_element;
 
-  ros::NodeHandle node(name);
+  ros::NodeHandle nh;
 
-  RealtimePublisher<diagnostic_msgs::DiagnosticArray> publisher(node, "/diagnostics", 2);
+  RealtimePublisher<diagnostic_msgs::DiagnosticArray> publisher(nh, "/diagnostics", 2);
   RealtimePublisher<std_msgs::Float64> *rtpublisher = NULL;
 
   // Realtime loop should be running at least 3/4 of given frequency
@@ -286,7 +287,7 @@ void *controlLoop(void *)
   double period_in_secs = 1e+9 * g_options.period;
   double given_frequency = 1 / period_in_secs;
   double min_acceptable_rt_loop_frequency = 0.75 * given_frequency;
-  if (node.getParam("min_acceptable_rt_loop_frequency", min_acceptable_rt_loop_frequency))
+  if (nh.getParam("min_acceptable_rt_loop_frequency", min_acceptable_rt_loop_frequency))
     ROS_WARN("min_acceptable_rt_loop_frequency changed to %f", min_acceptable_rt_loop_frequency);
 
   unsigned rt_cycle_count = 0;
@@ -298,7 +299,7 @@ void *controlLoop(void *)
   RTLoopHistory rt_loop_history(3, 1000.0);
 
   if (g_options.stats_)
-    rtpublisher = new RealtimePublisher<std_msgs::Float64>(node, "realtime", 2);
+    rtpublisher = new RealtimePublisher<std_msgs::Float64>(nh, "realtime", 2);
 
   // Load robot description
   TiXmlDocument xml;
@@ -316,8 +317,7 @@ void *controlLoop(void *)
     return terminate_control(&publisher, rtpublisher, "Failed to parse the xml from %s", g_options.rosparam_);
 
   // Initialize the hardware interface
-  ros::NodeHandle nh;
-  CombinedRobotHardware combined_robot;
+  combined_robot_hardware::CombinedRobotHW combined_robot;
   combined_robot.init(nh, nh);
 
   // Create controller manager
@@ -360,10 +360,10 @@ void *controlLoop(void *)
     double start = now();
 
     ros::Time this_moment(tick.tv_sec, tick.tv_nsec);
-    combined_robot.read(this_moment);
+    combined_robot.read();
     double after_ec = now();
     cm.update(this_moment, durp);
-    combined_robot.write(this_moment);
+    combined_robot.write();
     double end = now();
 
     g_stats.ec_acc(after_ec - start);
@@ -646,8 +646,6 @@ int main(int argc, char *argv[])
   // EtherCAT lock for this interface (e.g. Ethernet port)
   if (setupPidFile(g_options.interface_) < 0)
     exit(EXIT_FAILURE);
-
-  ros::NodeHandle node(name);
 
   // Catch attempts to quit
   signal(SIGTERM, quitRequested);
