@@ -12,5 +12,23 @@
 
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>roscpp</build_depend>
+  <build_depend>combined_robot_hw</build_depend>
+  <build_depend>std_msgs</build_depend>
+  <build_depend>controller_manager</build_depend>
+  <build_depend>ros_ethercat_model</build_depend>
+  <build_depend>realtime_tools</build_depend>
+  <build_depend>diagnostic_updater</build_depend>
+  <build_depend>diagnostic_msgs</build_depend>
+  <build_depend>pluginlib</build_depend>
+
   <run_depend>roscpp</run_depend>
+  <run_depend>combined_robot_hw</run_depend>
+  <run_depend>std_msgs</run_depend>
+  <run_depend>controller_manager</run_depend>
+  <run_depend>ros_ethercat_model</run_depend>
+  <run_depend>realtime_tools</run_depend>
+  <run_depend>diagnostic_updater</run_depend>
+  <run_depend>diagnostic_msgs</run_depend>
+  <run_depend>pluginlib</run_depend>
+  <run_depend>ethercat_grant</run_depend>
 </package>
