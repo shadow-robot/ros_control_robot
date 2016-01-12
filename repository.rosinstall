@@ -1,4 +1,14 @@
 - git:
-    local-name: shadow_ros_control
+    local-name: ros_control
     uri: https://github.com/shadow-robot/ros_control.git
     version: combined_robot_hw
+
+- git:
+    local-name: ros_controllers
+    uri: https://github.com/ros-controls/ros_controllers.git
+    version: jade-devel
+
+- git:
+    local-name: ros_ethercat
+    uri: https://github.com/shadow-robot/ros_ethercat.git
+    version: F#41_combined_robot_hw
