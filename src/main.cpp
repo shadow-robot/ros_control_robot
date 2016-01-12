@@ -58,7 +58,11 @@
 #include <realtime_tools/realtime_publisher.h>
 #include <diagnostic_msgs/DiagnosticArray.h>
 
-using namespace boost::accumulators;
+using boost::accumulators::accumulator_set;
+using boost::accumulators::stats;
+using boost::accumulators::extract_result;
+using boost::accumulators::tag::max;
+using boost::accumulators::tag::mean;
 using boost::ptr_vector;
 using std::string;
 using std::vector;
@@ -96,10 +100,10 @@ static const int SEC_2_USEC = 1e6;
 
 static struct
 {
-  accumulator_set<double, stats<tag::max, tag::mean> > ec_acc;
-  accumulator_set<double, stats<tag::max, tag::mean> > cm_acc;
-  accumulator_set<double, stats<tag::max, tag::mean> > loop_acc;
-  accumulator_set<double, stats<tag::max, tag::mean> > jitter_acc;
+  accumulator_set<double, stats<max, mean> > ec_acc;
+  accumulator_set<double, stats<max, mean> > cm_acc;
+  accumulator_set<double, stats<max, mean> > loop_acc;
+  accumulator_set<double, stats<max, mean> > jitter_acc;
   int overruns;
   int recent_overruns;
   int last_overrun;
@@ -118,26 +122,26 @@ static void publishDiagnostics(RealtimePublisher<diagnostic_msgs::DiagnosticArra
 {
   if (publisher.trylock())
   {
-    accumulator_set<double, stats<tag::max, tag::mean> > zero;
+    accumulator_set<double, stats<max, mean> > zero;
     vector<diagnostic_msgs::DiagnosticStatus> statuses;
     diagnostic_updater::DiagnosticStatusWrapper status;
 
     static double max_ec = 0, max_cm = 0, max_loop = 0, max_jitter = 0;
     double avg_ec, avg_cm, avg_loop, avg_jitter;
 
-    avg_ec = extract_result<tag::mean>(g_stats.ec_acc);
-    avg_cm = extract_result<tag::mean>(g_stats.cm_acc);
-    avg_loop = extract_result<tag::mean>(g_stats.loop_acc);
-    max_ec = std::max(max_ec, extract_result<tag::max>(g_stats.ec_acc));
-    max_cm = std::max(max_cm, extract_result<tag::max>(g_stats.cm_acc));
-    max_loop = std::max(max_loop, extract_result<tag::max>(g_stats.loop_acc));
+    avg_ec = extract_result<mean>(g_stats.ec_acc);
+    avg_cm = extract_result<mean>(g_stats.cm_acc);
+    avg_loop = extract_result<mean>(g_stats.loop_acc);
+    max_ec = std::max(max_ec, extract_result<max>(g_stats.ec_acc));
+    max_cm = std::max(max_cm, extract_result<max>(g_stats.cm_acc));
+    max_loop = std::max(max_loop, extract_result<max>(g_stats.loop_acc));
     g_stats.ec_acc = zero;
     g_stats.cm_acc = zero;
     g_stats.loop_acc = zero;
 
     // Publish average loop jitter
-    avg_jitter = extract_result<tag::mean>(g_stats.jitter_acc);
-    max_jitter = std::max(max_jitter, extract_result<tag::max>(g_stats.jitter_acc));
+    avg_jitter = extract_result<mean>(g_stats.jitter_acc);
+    max_jitter = std::max(max_jitter, extract_result<max>(g_stats.jitter_acc));
     g_stats.jitter_acc = zero;
 
     static bool first = true;
