@@ -502,6 +502,8 @@ int main(int argc, char *argv[])
   if (optind < argc)
     Usage("Extra arguments");
 
+  ros::NodeHandle node;
+
   // Catch attempts to quit
   signal(SIGTERM, quitRequested);
   signal(SIGINT, quitRequested);
