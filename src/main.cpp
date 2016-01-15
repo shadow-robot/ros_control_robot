@@ -58,7 +58,11 @@
 #include <realtime_tools/realtime_publisher.h>
 #include <diagnostic_msgs/DiagnosticArray.h>
 
-using namespace boost::accumulators;
+using boost::accumulators::accumulator_set;
+using boost::accumulators::stats;
+using boost::accumulators::extract_result;
+using boost::accumulators::tag::max;
+using boost::accumulators::tag::mean;
 using boost::ptr_vector;
 using std::string;
 using std::vector;
@@ -68,12 +72,10 @@ using realtime_tools::RealtimePublisher;
 static struct
 {
   char *program_;
-  char *interface_;
-  char *rosparam_;
-  bool allow_unprogrammed_;
   bool stats_;
   double period;
-} g_options;
+}
+g_options;
 
 string g_robot_desc;
 
@@ -81,11 +83,8 @@ void Usage(const string &msg = "")
 {
   fprintf(stderr, "Usage: %s [options]\n", g_options.program_);
   fprintf(stderr, "  Available options\n");
-  fprintf(stderr, "    -i, --interface <interface> Connect to EtherCAT devices on this interface\n");
   fprintf(stderr, "    -p, --period                RT loop period in msec\n");
   fprintf(stderr, "    -s, --stats                 Publish statistics on the RT loop jitter on \"ros_ros_ethercat_eml/realtime\" in seconds\n");
-  fprintf(stderr, "    -r, --rosparam <param>      Load the robot description from this parameter name\n");
-  fprintf(stderr, "    -u, --allow_unprogrammed    Allow control loop to run with unprogrammed devices\n");
   fprintf(stderr, "    -h, --help                  Print this message and exit\n");
   if (msg != "")
   {
@@ -102,10 +101,10 @@ static const int SEC_2_USEC = 1e6;
 
 static struct
 {
-  accumulator_set<double, stats<tag::max, tag::mean> > ec_acc;
-  accumulator_set<double, stats<tag::max, tag::mean> > cm_acc;
-  accumulator_set<double, stats<tag::max, tag::mean> > loop_acc;
-  accumulator_set<double, stats<tag::max, tag::mean> > jitter_acc;
+  accumulator_set<double, stats<max, mean> > ec_acc;
+  accumulator_set<double, stats<max, mean> > cm_acc;
+  accumulator_set<double, stats<max, mean> > loop_acc;
+  accumulator_set<double, stats<max, mean> > jitter_acc;
   int overruns;
   int recent_overruns;
   int last_overrun;
@@ -124,26 +123,26 @@ static void publishDiagnostics(RealtimePublisher<diagnostic_msgs::DiagnosticArra
 {
   if (publisher.trylock())
   {
-    accumulator_set<double, stats<tag::max, tag::mean> > zero;
+    accumulator_set<double, stats<max, mean> > zero;
     vector<diagnostic_msgs::DiagnosticStatus> statuses;
     diagnostic_updater::DiagnosticStatusWrapper status;
 
     static double max_ec = 0, max_cm = 0, max_loop = 0, max_jitter = 0;
     double avg_ec, avg_cm, avg_loop, avg_jitter;
 
-    avg_ec = extract_result<tag::mean>(g_stats.ec_acc);
-    avg_cm = extract_result<tag::mean>(g_stats.cm_acc);
-    avg_loop = extract_result<tag::mean>(g_stats.loop_acc);
-    max_ec = std::max(max_ec, extract_result<tag::max>(g_stats.ec_acc));
-    max_cm = std::max(max_cm, extract_result<tag::max>(g_stats.cm_acc));
-    max_loop = std::max(max_loop, extract_result<tag::max>(g_stats.loop_acc));
+    avg_ec = extract_result<mean>(g_stats.ec_acc);
+    avg_cm = extract_result<mean>(g_stats.cm_acc);
+    avg_loop = extract_result<mean>(g_stats.loop_acc);
+    max_ec = std::max(max_ec, extract_result<max>(g_stats.ec_acc));
+    max_cm = std::max(max_cm, extract_result<max>(g_stats.cm_acc));
+    max_loop = std::max(max_loop, extract_result<max>(g_stats.loop_acc));
     g_stats.ec_acc = zero;
     g_stats.cm_acc = zero;
     g_stats.loop_acc = zero;
 
     // Publish average loop jitter
-    avg_jitter = extract_result<tag::mean>(g_stats.jitter_acc);
-    max_jitter = std::max(max_jitter, extract_result<tag::max>(g_stats.jitter_acc));
+    avg_jitter = extract_result<mean>(g_stats.jitter_acc);
+    max_jitter = std::max(max_jitter, extract_result<max>(g_stats.jitter_acc));
     g_stats.jitter_acc = zero;
 
     static bool first = true;
@@ -305,17 +304,6 @@ void *controlLoop(void *)
   TiXmlDocument xml;
   struct stat st;
 
-  if (ros::param::get(g_options.rosparam_, g_robot_desc))
-    xml.Parse(g_robot_desc.c_str());
-  else
-    return terminate_control(&publisher, rtpublisher,
-                             "Could not load the xml from parameter server: %s", g_options.rosparam_);
-
-  root_element = xml.RootElement();
-  root = xml.FirstChildElement("robot");
-  if (!root || !root_element)
-    return terminate_control(&publisher, rtpublisher, "Failed to parse the xml from %s", g_options.rosparam_);
-
   // Initialize the hardware interface
   combined_robot_hardware::CombinedRobotHW combined_robot;
   combined_robot.init(nh, nh);
@@ -452,9 +440,6 @@ void *controlLoop(void *)
     }
   }
 
-  // Shutdown all of the motors on exit
-//  seth.shutdown();
-
   publisher.stop();
   delete rtpublisher;
   ros::shutdown();
@@ -466,113 +451,6 @@ void quitRequested(int sig)
   g_quit = 1;
 }
 
-static int lock_fd(int fd)
-{
-  struct flock lock;
-
-  lock.l_type = F_WRLCK;
-  lock.l_whence = SEEK_SET;
-  lock.l_start = 0;
-  lock.l_len = 0;
-
-  return fcntl(fd, F_SETLK, &lock);
-}
-
-
-static const char* PIDDIR = "/var/tmp/run/";
-
-string generatePIDFilename(const char* interface)
-{
-  string filename;
-  filename = string(PIDDIR) + "EtherCAT_" + string(interface) + ".pid";
-  return filename;
-}
-
-static int setupPidFile(const char* interface)
-{
-  pid_t pid;
-  int fd;
-  FILE *fp = NULL;
-
-  string filename = generatePIDFilename(interface);
-
-  umask(0);
-  mkdir(PIDDIR, 0777);
-  int PID_FLAGS = O_RDWR | O_CREAT | O_EXCL;
-  int PID_MODE = S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP | S_IWOTH | S_IROTH;
-  fd = open(filename.c_str(), PID_FLAGS, PID_MODE);
-  if (fd == -1)
-  {
-    if (errno != EEXIST)
-    {
-      ROS_FATAL("Unable to create pid file '%s': %s", filename.c_str(), strerror(errno));
-      return -1;
-    }
-
-    if ((fd = open(filename.c_str(), O_RDWR)) < 0)
-    {
-      ROS_FATAL("Unable to open pid file '%s': %s", filename.c_str(), strerror(errno));
-      return -1;
-    }
-
-    if ((fp = fdopen(fd, "rw")) == NULL)
-    {
-      ROS_FATAL("Can't read from '%s': %s", filename.c_str(), strerror(errno));
-      return -1;
-    }
-    pid = -1;
-    if ((fscanf(fp, "%d", &pid) != 1) || (pid == getpid()) || (lock_fd(fileno(fp)) == 0))
-    {
-      int rc;
-
-      if ((rc = unlink(filename.c_str())) == -1)
-      {
-        ROS_FATAL("Can't remove stale pid file '%s': %s", filename.c_str(), strerror(errno));
-        return -1;
-      }
-    }
-    else
-    {
-      ROS_FATAL("Another instance of ros_ethercat is already running with pid: %d", pid);
-      return -1;
-    }
-  }
-
-  unlink(filename.c_str());
-  fd = open(filename.c_str(), PID_FLAGS, PID_MODE);
-
-  if (fd == -1)
-  {
-    ROS_FATAL("Unable to open pid file '%s': %s", filename.c_str(), strerror(errno));
-    return -1;
-  }
-
-  if (lock_fd(fd) == -1)
-  {
-    ROS_FATAL("Unable to lock pid file '%s': %s", filename.c_str(), strerror(errno));
-    return -1;
-  }
-
-  if ((fp = fdopen(fd, "w")) == NULL)
-  {
-    ROS_FATAL("fdopen failed: %s", strerror(errno));
-    return -1;
-  }
-
-  fprintf(fp, "%d\n", getpid());
-
-  /* We do NOT close fd, since we want to keep the lock. */
-  fflush(fp);
-  fcntl(fd, F_SETFD, (long) 1);
-
-  return 0;
-}
-
-static void cleanupPidFile(const char* interface)
-{
-  string filename = generatePIDFilename(interface);
-  unlink(filename.c_str());
-}
 
 #define CLOCK_PRIO 0
 #define CONTROL_PRIO 0
@@ -594,7 +472,6 @@ int main(int argc, char *argv[])
 
   // Parse options
   g_options.program_ = argv[0];
-  g_options.rosparam_ = NULL;
   g_options.period = 1e+6; // 1 ms in nanoseconds
 
   while (true)
@@ -602,9 +479,6 @@ int main(int argc, char *argv[])
     static struct option long_options[] = {
       {"help", no_argument, 0, 'h'},
       {"stats", no_argument, 0, 's'},
-      {"allow_unprogrammed", no_argument, 0, 'u'},
-      {"interface", required_argument, 0, 'i'},
-      {"rosparam", required_argument, 0, 'r'},
       {"period", no_argument, 0, 'p'},
     };
     int option_index = 0;
@@ -616,15 +490,6 @@ int main(int argc, char *argv[])
     {
       case 'h':
         Usage();
-        break;
-      case 'u':
-        g_options.allow_unprogrammed_ = true;
-        break;
-      case 'i':
-        g_options.interface_ = optarg;
-        break;
-      case 'r':
-        g_options.rosparam_ = optarg;
         break;
       case 's':
         g_options.stats_ = true;
@@ -638,14 +503,7 @@ int main(int argc, char *argv[])
   if (optind < argc)
     Usage("Extra arguments");
 
-  if (!g_options.interface_)
-    Usage("You must specify a network interface");
-  if (!g_options.rosparam_)
-    Usage("You must specify a rosparam for robot description");
-
-  // EtherCAT lock for this interface (e.g. Ethernet port)
-  if (setupPidFile(g_options.interface_) < 0)
-    exit(EXIT_FAILURE);
+  ros::NodeHandle node;
 
   // Catch attempts to quit
   signal(SIGTERM, quitRequested);
@@ -662,10 +520,6 @@ int main(int argc, char *argv[])
 
   ros::spin();
   pthread_join(controlThread, (void **) &rv);
-
-  // Cleanup pid files
-  cleanupPidFile(NULL);
-  cleanupPidFile(g_options.interface_);
 
   return rv;
 }
