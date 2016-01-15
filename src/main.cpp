@@ -74,7 +74,8 @@ static struct
   char *program_;
   bool stats_;
   double period;
-} g_options;
+}
+g_options;
 
 string g_robot_desc;
 
