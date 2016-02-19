@@ -202,23 +202,6 @@ static inline double now()
   return double(n.tv_nsec) / SEC_2_NSEC + n.tv_sec;
 }
 
-//void *diagnosticLoop(void *args)
-//{
-//  ptr_vector<EthercatHardware>* ec = (ptr_vector<EthercatHardware>*) args;
-//  struct timespec tick;
-//  clock_gettime(CLOCK_MONOTONIC, &tick);
-//  while (!g_quit)
-//  {
-//    for (ptr_vector<EthercatHardware>::iterator eh = ec->begin(); eh != ec->end(); ++eh)
-//    {
-//      eh->collectDiagnostics();
-//    }
-//    ++tick.tv_sec;
-//    clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &tick, NULL);
-//  }
-//  return NULL;
-//}
-
 static void timespecInc(struct timespec &tick, int nsec)
 {
   tick.tv_nsec += nsec;
@@ -313,13 +296,6 @@ void *controlLoop(void *)
 
   // Publish one-time before entering real-time to pre-allocate message vectors
   publishDiagnostics(publisher);
-
-  //Start Non-realtime diagnostic thread
-  static pthread_t diagnosticThread;
-//  int rv = pthread_create(&diagnosticThread, NULL, diagnosticLoop, &seth.ethercat_hardware_);
-//  if (rv != 0)
-//    return terminate_control(&publisher, rtpublisher,
-//                             "Unable to create control thread: rv = %s", boost::lexical_cast<string>(rv).c_str());
 
   // Set to realtime scheduler for this thread
   struct sched_param thread_param;
