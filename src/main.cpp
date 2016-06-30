@@ -63,7 +63,6 @@ using boost::accumulators::stats;
 using boost::accumulators::extract_result;
 using boost::accumulators::tag::max;
 using boost::accumulators::tag::mean;
-using boost::ptr_vector;
 using std::string;
 using std::vector;
 using std::accumulate;
