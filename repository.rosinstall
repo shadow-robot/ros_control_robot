@@ -19,10 +19,11 @@
     uri: https://github.com/ros-controls/ros_control.git
     version: kinetic-devel
 
+# Use until this PR has been merged: https://github.com/ros-controls/ros_controllers/pull/226
 - git:
     local-name: ros_controllers
-    uri: https://github.com/ros-controls/ros_controllers.git
-    version: kinetic-devel
+    uri: https://github.com/shadow-robot/ros_controllers.git
+    version: F_enable_part_traj_kinetic
 
 - git:
     local-name: ros_ethercat
