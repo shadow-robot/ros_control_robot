@@ -19,11 +19,12 @@
     uri: https://github.com/ros-controls/ros_control.git
     version: cac90740a71e506677a7fcc26c3e5fd4f8297e4b
 
-# Use until this PR has been merged: https://github.com/ros-controls/ros_controllers/pull/226
+# For kinetic, use F_enable_part_traj_kinetic branch until this PR has been merged: https://github.com/ros-controls/ros_controllers/pull/226
+# For indigo, use the branch below instead
 - git:
     local-name: ros_controllers
     uri: https://github.com/shadow-robot/ros_controllers.git
-    version: F_enable_part_traj_kinetic
+    version: indigo_compatible_enable_part_traj_kinetic
 
 - git:
     local-name: ros_ethercat
