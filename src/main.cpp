@@ -34,6 +34,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
+#include <algorithm>
 #include <cstdio>
 #include <cstdarg>
 #include <getopt.h>
@@ -57,6 +58,8 @@
 #include <boost/accumulators/statistics/mean.hpp>
 #include <realtime_tools/realtime_publisher.h>
 #include <diagnostic_msgs/DiagnosticArray.h>
+#include <string>
+#include <vector>
 
 using boost::accumulators::accumulator_set;
 using boost::accumulators::stats;
@@ -76,14 +79,12 @@ static struct
 }
 g_options;
 
-string g_robot_desc;
-
 void Usage(const string &msg = "")
 {
   fprintf(stderr, "Usage: %s [options]\n", g_options.program_);
   fprintf(stderr, "  Available options\n");
   fprintf(stderr, "    -p, --period                RT loop period in msec\n");
-  fprintf(stderr, "    -s, --stats                 Publish statistics on the RT loop jitter on \"ros_ros_ethercat_eml/realtime\" in seconds\n");
+  fprintf(stderr, "    -s, --stats                 Publish statistics on the RT loop jitter on \"node_name/realtime\" in seconds\n");
   fprintf(stderr, "    -h, --help                  Print this message and exit\n");
   if (msg != "")
   {
@@ -143,13 +144,6 @@ static void publishDiagnostics(RealtimePublisher<diagnostic_msgs::DiagnosticArra
     avg_jitter = extract_result<mean>(g_stats.jitter_acc);
     max_jitter = std::max(max_jitter, extract_result<max>(g_stats.jitter_acc));
     g_stats.jitter_acc = zero;
-
-    static bool first = true;
-    if (first)
-    {
-      first = false;
-      status.add("Robot Description", g_robot_desc);
-    }
 
     status.addf("Max EtherCAT roundtrip (us)", "%.2f", max_ec * SEC_2_USEC);
     status.addf("Avg EtherCAT roundtrip (us)", "%.2f", avg_ec * SEC_2_USEC);
@@ -345,7 +339,7 @@ void *controlLoop(void *)
     if ((start - last_rt_monitor_time) > rt_loop_monitor_period)
     {
       // Calculate new average rt loop frequency
-      double rt_loop_frequency = double(rt_cycle_count) / rt_loop_monitor_period;
+      double rt_loop_frequency = static_cast<double>(rt_cycle_count) / rt_loop_monitor_period;
 
       // Use last X samples of frequency when deciding whether or not to halt
       rt_loop_history.sample(rt_loop_frequency);
@@ -369,11 +363,11 @@ void *controlLoop(void *)
 
     struct timespec before;
     clock_gettime(CLOCK_REALTIME, &before);
-    if ((before.tv_sec + double(before.tv_nsec) / SEC_2_NSEC) > (tick.tv_sec + double(tick.tv_nsec) / SEC_2_NSEC))
+    if ((before.tv_sec + static_cast<double>(before.tv_nsec) / SEC_2_NSEC) > (tick.tv_sec + static_cast<double>(tick.tv_nsec) / SEC_2_NSEC))
     {
       // Total amount of time the loop took to run
-      g_stats.overrun_loop_sec = (before.tv_sec + double(before.tv_nsec) / SEC_2_NSEC) -
-        (tick.tv_sec + double(tick.tv_nsec) / SEC_2_NSEC);
+      g_stats.overrun_loop_sec = (before.tv_sec + static_cast<double>(before.tv_nsec) / SEC_2_NSEC) -
+        (tick.tv_sec + static_cast<double>(tick.tv_nsec) / SEC_2_NSEC);
 
       // We overran, snap to next "g_options.period"
       tick.tv_sec = before.tv_sec;
@@ -485,7 +479,7 @@ int main(int argc, char *argv[])
   signal(SIGINT, quitRequested);
   signal(SIGHUP, quitRequested);
 
-  //Start thread
+  // Start thread
   int rv = pthread_create(&controlThread, &controlThreadAttr, controlLoop, 0);
   if (rv != 0)
   {
@@ -494,7 +488,7 @@ int main(int argc, char *argv[])
   }
 
   ros::spin();
-  pthread_join(controlThread, (void **) &rv);
+  pthread_join(controlThread, reinterpret_cast<void **>(&rv));
 
   return rv;
 }
