@@ -84,7 +84,8 @@ void Usage(const string &msg = "")
   fprintf(stderr, "Usage: %s [options]\n", g_options.program_);
   fprintf(stderr, "  Available options\n");
   fprintf(stderr, "    -p, --period                RT loop period in msec\n");
-  fprintf(stderr, "    -s, --stats                 Publish statistics on the RT loop jitter on \"node_name/realtime\" in seconds\n");
+  fprintf(stderr, "    -s, --stats                 Publish statistics on the RT loop "
+		  "jitter on \"node_name/realtime\" in seconds\n");
   fprintf(stderr, "    -h, --help                  Print this message and exit\n");
   if (msg != "")
   {
@@ -192,7 +193,7 @@ static inline double now()
 {
   struct timespec n;
   clock_gettime(CLOCK_MONOTONIC, &n);
-  return double(n.tv_nsec) / SEC_2_NSEC + n.tv_sec;
+  return static_cast<double>(n.tv_nsec) / SEC_2_NSEC + n.tv_sec;
 }
 
 static void timespecInc(struct timespec &tick, int nsec)
@@ -208,7 +209,6 @@ static void timespecInc(struct timespec &tick, int nsec)
 class RTLoopHistory
 {
 public:
-
   RTLoopHistory(unsigned length, double default_value) :
     index_(0),
     length_(length),
@@ -224,7 +224,7 @@ public:
 
   double average() const
   {
-    return accumulate(history_.begin(), history_.end(), 0.0) / (double) length_;
+    return accumulate(history_.begin(), history_.end(), 0.0) / static_cast<double>(length_);
   }
 
 protected:
@@ -242,7 +242,7 @@ static void* terminate_control(RealtimePublisher<diagnostic_msgs::DiagnosticArra
   publisher->stop();
   delete rtpublisher;
   ros::shutdown();
-  return (void*) - 1;
+  return reinterpret_cast<void*>(- 1);
 }
 
 void *controlLoop(void *)
