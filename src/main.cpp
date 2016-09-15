@@ -85,7 +85,7 @@ void Usage(const string &msg = "")
   fprintf(stderr, "  Available options\n");
   fprintf(stderr, "    -p, --period                RT loop period in msec\n");
   fprintf(stderr, "    -s, --stats                 Publish statistics on the RT loop "
-		  "jitter on \"node_name/realtime\" in seconds\n");
+      "jitter on \"node_name/realtime\" in seconds\n");
   fprintf(stderr, "    -h, --help                  Print this message and exit\n");
   if (msg != "")
   {
@@ -118,7 +118,8 @@ static struct
   bool rt_loop_not_making_timing;
   double halt_rt_loop_frequency;
   double rt_loop_frequency;
-} g_stats;
+}
+g_stats;
 
 static void publishDiagnostics(RealtimePublisher<diagnostic_msgs::DiagnosticArray> &publisher)
 {
@@ -363,7 +364,8 @@ void *controlLoop(void *)
 
     struct timespec before;
     clock_gettime(CLOCK_REALTIME, &before);
-    if ((before.tv_sec + static_cast<double>(before.tv_nsec) / SEC_2_NSEC) > (tick.tv_sec + static_cast<double>(tick.tv_nsec) / SEC_2_NSEC))
+    if ((before.tv_sec + static_cast<double>(before.tv_nsec) / SEC_2_NSEC) >
+        (tick.tv_sec + static_cast<double>(tick.tv_nsec) / SEC_2_NSEC))
     {
       // Total amount of time the loop took to run
       g_stats.overrun_loop_sec = (before.tv_sec + static_cast<double>(before.tv_nsec) / SEC_2_NSEC) -
@@ -397,7 +399,7 @@ void *controlLoop(void *)
     // Calculate RT loop jitter
     struct timespec after;
     clock_gettime(CLOCK_REALTIME, &after);
-    double jitter = (after.tv_sec - tick.tv_sec + double(after.tv_nsec - tick.tv_nsec) / SEC_2_NSEC);
+    double jitter = (after.tv_sec - tick.tv_sec + static_cast<double>(after.tv_nsec - tick.tv_nsec) / SEC_2_NSEC);
 
     g_stats.jitter_acc(jitter);
 
@@ -441,7 +443,7 @@ int main(int argc, char *argv[])
 
   // Parse options
   g_options.program_ = argv[0];
-  g_options.period = 1e+6; // 1 ms in nanoseconds
+  g_options.period = 1e+6;  // 1 ms in nanoseconds
 
   while (true)
   {
