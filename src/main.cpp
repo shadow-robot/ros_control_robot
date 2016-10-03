@@ -246,7 +246,7 @@ static void* terminate_control(RealtimePublisher<diagnostic_msgs::DiagnosticArra
   return reinterpret_cast<void*>(- 1);
 }
 
-void *controlLoop(void */*unused_param*/)
+void *controlLoop(void */*unused_param*/)  // NOLINT(readability/casting)
 {
   double last_published, last_loop_start;
   int policy;
