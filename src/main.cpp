@@ -61,6 +61,15 @@
 #include <string>
 #include <vector>
 
+#include <sys/types.h>
+#include <signal.h>
+#include <unistd.h>
+
+static void core_dump(int sigid)
+{
+    kill(getpid(), SIGSEGV);
+}
+
 using boost::accumulators::accumulator_set;
 using boost::accumulators::stats;
 using boost::accumulators::extract_result;
@@ -431,6 +440,7 @@ static pthread_attr_t controlThreadAttr;
 
 int main(int argc, char *argv[])
 {
+  signal(SIGINT, core_dump);
   // Keep the kernel from swapping us out
   if (mlockall(MCL_CURRENT | MCL_FUTURE) < 0)
   {
