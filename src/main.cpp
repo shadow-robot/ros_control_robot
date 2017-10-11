@@ -431,13 +431,6 @@ static pthread_attr_t controlThreadAttr;
 
 int main(int argc, char *argv[])
 {
-  // Keep the kernel from swapping us out
-  if (mlockall(MCL_CURRENT | MCL_FUTURE) < 0)
-  {
-    perror("Failed to lock memory. It is recommended to do rosrun ros_ethercat_loop ethercat_grant");
-    exit(EXIT_FAILURE);
-  }
-
   // Initialize ROS and parse command-line arguments
   ros::init(argc, argv, "realtime_loop");
 
