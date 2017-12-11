@@ -34,7 +34,6 @@ CATKIN_DEPENDS
     diagnostic_updater
     diagnostic_msgs
     pluginlib
-    TinyXML
 )
 
 add_executable(${PROJECT_NAME} src/main.cpp)
