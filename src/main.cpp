@@ -61,6 +61,8 @@
 #include <string>
 #include <vector>
 
+#include <tinyxml.h>
+
 using boost::accumulators::accumulator_set;
 using boost::accumulators::stats;
 using boost::accumulators::extract_result;
