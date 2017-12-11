@@ -34,7 +34,6 @@ CATKIN_DEPENDS
     diagnostic_updater
     diagnostic_msgs
     pluginlib
-    cmake_modules
     TinyXML
 )
 
