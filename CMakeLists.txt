@@ -12,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
     diagnostic_updater
     diagnostic_msgs
     pluginlib
+    cmake_modules
 )
 
 find_package(TinyXML REQUIRED)
@@ -33,6 +34,7 @@ CATKIN_DEPENDS
     diagnostic_updater
     diagnostic_msgs
     pluginlib
+    cmake_modules
     TinyXML
 )
 
