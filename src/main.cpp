@@ -162,7 +162,7 @@ static void publishDiagnostics(RealtimePublisher<diagnostic_msgs::DiagnosticArra
     status.addf("Last Control Loop Overrun Cause", "ec: %.2fus, cm: %.2fus",
                 g_stats.overrun_ec*SEC_2_USEC, g_stats.overrun_cm * SEC_2_USEC);
     status.addf("Last Overrun Loop Time (us)", "%.2f", g_stats.overrun_loop_sec * SEC_2_USEC);
-    status.addf("Realtime Loop Frequency", "%.4f", g_stats.rt_loop_frequency);
+    status.addf("Realtime Loop Frequency (Hz)", "%.4f", g_stats.rt_loop_frequency);
 
     status.name = "Realtime Control Loop";
     if (g_stats.overruns > 0 && g_stats.last_overrun < 30)
