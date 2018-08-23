@@ -449,7 +449,7 @@ int main(int argc, char *argv[])
 
   while (true)
   {
-    static struct option long_options[] = 
+    static struct option long_options[] =
     {
       {"help", no_argument, 0, 'h'},
       {"stats", no_argument, 0, 's'},
