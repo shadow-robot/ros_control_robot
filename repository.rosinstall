@@ -2,3 +2,4 @@
     local-name: ros_ethercat
     uri: https://github.com/shadow-robot/ros_ethercat.git
     version: kinetic-devel
+
