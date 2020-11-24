@@ -60,6 +60,7 @@
 #include <diagnostic_msgs/DiagnosticArray.h>
 #include <string>
 #include <vector>
+#include <sr_utilities_common/wait_for_param.h>
 
 #include <tinyxml.h>
 
@@ -442,6 +443,13 @@ int main(int argc, char *argv[])
 
   // Initialize ROS and parse command-line arguments
   ros::init(argc, argv, "realtime_loop");
+
+  ros::NodeHandle n;
+
+  if (!wait_for_param(n, "robot_description"))
+  {
+    throw std::runtime_error("Ros_control_robot did not find robot_description on parameter server");
+  }
 
   // Parse options
   g_options.program_ = argv[0];

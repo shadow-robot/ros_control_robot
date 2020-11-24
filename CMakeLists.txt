@@ -13,6 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
     diagnostic_msgs
     pluginlib
     cmake_modules
+    sr_utilities_common
 )
 
 find_package(TinyXML REQUIRED)
