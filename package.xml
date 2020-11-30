@@ -35,4 +35,5 @@
   <run_depend>pluginlib</run_depend>
   <run_depend>tinyxml</run_depend>
   <run_depend>ethercat_grant</run_depend>
+  <run_depend>sr_utilities_common</run_depend>
 </package>

@@ -30,6 +30,7 @@ CATKIN_DEPENDS
     combined_robot_hw
     std_msgs
     controller_manager
+    sr_utilities_common
     ros_ethercat_model
     realtime_tools
     diagnostic_updater
