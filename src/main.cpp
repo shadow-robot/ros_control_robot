@@ -60,7 +60,6 @@
 #include <diagnostic_msgs/DiagnosticArray.h>
 #include <string>
 #include <vector>
-#include <sr_utilities_common/wait_for_param.h>
 
 #include <tinyxml.h>
 
@@ -446,9 +445,19 @@ int main(int argc, char *argv[])
 
   ros::NodeHandle n;
 
-  if (!wait_for_param(n, "robot_description"))
+  ros::Time start_time = ros::Time::now();
+  const double TIME_BEFORE_INFO = 60;
+  while (ros::ok())
   {
-    throw std::runtime_error("Ros_control_robot did not find robot_description on parameter server");
+    if (n.hasParam("robot_description"))
+    {
+      return true;
+    }
+    if (ros::Time::now().toSec() - start_time.toSec() >= TIME_BEFORE_INFO)
+    {
+      ROS_INFO_STREAM("Still waiting for parameter robot description");
+      start_time = ros::Time::now();
+    }
   }
 
   // Parse options

@@ -13,7 +13,6 @@ find_package(catkin REQUIRED COMPONENTS
     diagnostic_msgs
     pluginlib
     cmake_modules
-    sr_utilities_common
 )
 
 find_package(TinyXML REQUIRED)
@@ -30,7 +29,6 @@ CATKIN_DEPENDS
     combined_robot_hw
     std_msgs
     controller_manager
-    sr_utilities_common
     ros_ethercat_model
     realtime_tools
     diagnostic_updater

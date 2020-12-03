@@ -22,7 +22,6 @@
   <build_depend>cmake_modules</build_depend>
   <build_depend>pluginlib</build_depend>
   <build_depend>tinyxml</build_depend>
-  <build_depend>sr_utilities_common</build_depend>
 
   <run_depend>roscpp</run_depend>
   <run_depend>combined_robot_hw</run_depend>
@@ -35,5 +34,4 @@
   <run_depend>pluginlib</run_depend>
   <run_depend>tinyxml</run_depend>
   <run_depend>ethercat_grant</run_depend>
-  <run_depend>sr_utilities_common</run_depend>
 </package>

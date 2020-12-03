@@ -2,8 +2,3 @@
     local-name: ros_ethercat
     uri: https://github.com/shadow-robot/ros_ethercat.git
     version: melodic-devel
-
-- git:
-    local-name: common_resources
-    uri: https://github.com/shadow-robot/common_resources.git
-    version: melodic-devel
