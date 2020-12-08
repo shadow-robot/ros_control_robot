@@ -443,6 +443,23 @@ int main(int argc, char *argv[])
   // Initialize ROS and parse command-line arguments
   ros::init(argc, argv, "realtime_loop");
 
+  ros::NodeHandle n;
+
+  ros::Time start_time = ros::Time::now();
+  const double TIME_BEFORE_INFO = 60;
+  while (ros::ok())
+  {
+    if (n.hasParam("robot_description"))
+    {
+      return true;
+    }
+    if (ros::Time::now().toSec() - start_time.toSec() >= TIME_BEFORE_INFO)
+    {
+      ROS_INFO_STREAM("Still waiting for parameter robot description");
+      start_time = ros::Time::now();
+    }
+  }
+
   // Parse options
   g_options.program_ = argv[0];
   g_options.period = 1e+6;  // 1 ms in nanoseconds
