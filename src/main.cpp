@@ -451,7 +451,7 @@ int main(int argc, char *argv[])
   {
     if (n.hasParam("robot_description"))
     {
-      return true;
+      break;
     }
     if (ros::Time::now().toSec() - start_time.toSec() >= TIME_BEFORE_INFO)
     {
