@@ -284,11 +284,16 @@ void *controlLoop(void */*unused_param*/)  // NOLINT(readability/casting)
   struct stat st;
 
   // Initialize the hardware interface
+  std::cout << "creating combined_robot\n";
   combined_robot_hw::CombinedRobotHW combined_robot;
+  std::cout << "initialising combined_robot\n";
   combined_robot.init(nh, nh);
+  std::cout << "combined_robot initialised\n";
 
   // Create controller manager
+  std::cout << "creating controller_manager\n";
   controller_manager::ControllerManager cm(&combined_robot);
+  std::cout << "controller_manager created\n";
 
   // Publish one-time before entering real-time to pre-allocate message vectors
   publishDiagnostics(publisher);
