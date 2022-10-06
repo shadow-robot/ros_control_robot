@@ -78,7 +78,7 @@ static struct
 {
   char *program_;
   bool stats_;
-  int period; // Period in nanoseconds
+  int period;  // Period in nanoseconds
 }
 g_options;
 
