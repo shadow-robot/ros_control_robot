@@ -488,7 +488,7 @@ int main(int argc, char *argv[])
         break;
       case 'p':
         // convert period given in msec to nsec
-        g_options.period = std:lround(fabs(atof(optarg))*1e+6);
+        g_options.period = std::lround(fabs(atof(optarg))*1e+6);
         break;
     }
   }
