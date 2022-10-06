@@ -4,7 +4,7 @@
  *  Copyright (c) 2008, Willow Garage, Inc.
  *  All rights reserved.
  *
- *  Modified 2016, by Shadow Robot Company Ltd.
+ *  Modified 2016-2018, 2020, 2022, by Shadow Robot Company Ltd.
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions
@@ -35,6 +35,7 @@
  *********************************************************************/
 
 #include <algorithm>
+#include <cmath>
 #include <cstdio>
 #include <cstdarg>
 #include <getopt.h>
@@ -77,7 +78,7 @@ static struct
 {
   char *program_;
   bool stats_;
-  double period;
+  int period; // Period in nanoseconds
 }
 g_options;
 
@@ -301,7 +302,7 @@ void *controlLoop(void */*unused_param*/)  // NOLINT(readability/casting)
 
   struct timespec tick;
   clock_gettime(CLOCK_REALTIME, &tick);
-  ros::Duration durp(g_options.period / 1e+9);
+  ros::Duration durp(static_cast<double>(g_options.period) / 1e+9);
 
   // Snap to the nearest second
   tick.tv_nsec = (tick.tv_nsec / g_options.period + 1) * g_options.period;
@@ -487,7 +488,7 @@ int main(int argc, char *argv[])
         break;
       case 'p':
         // convert period given in msec to nsec
-        g_options.period = fabs(atof(optarg))*1e+6;
+        g_options.period = std:lround(fabs(atof(optarg))*1e+6);
         break;
     }
   }
