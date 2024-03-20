@@ -301,12 +301,13 @@ void *controlLoop(void */*unused_param*/)  // NOLINT(readability/casting)
   pthread_setschedparam(pthread_self(), policy, &thread_param);
 
   struct timespec tick;
-  clock_gettime(CLOCK_REALTIME, &tick);
+  struct timespec tick_realtime;
+  clock_gettime(CLOCK_MONOTONIC, &tick);
   ros::Duration durp(static_cast<double>(g_options.period) / 1e+9);
 
   // Snap to the nearest second
   tick.tv_nsec = (tick.tv_nsec / g_options.period + 1) * g_options.period;
-  clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &tick, NULL);
+  clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &tick, NULL);
 
   last_published = now();
   last_rt_monitor_time = now();
@@ -320,7 +321,9 @@ void *controlLoop(void */*unused_param*/)  // NOLINT(readability/casting)
 
     double start = now();
 
-    ros::Time this_moment(tick.tv_sec, tick.tv_nsec);
+    clock_gettime(CLOCK_REALTIME, &tick_realtime);
+
+    ros::Time this_moment(tick_realtime.tv_sec, tick_realtime.tv_nsec);
     combined_robot.read(this_moment, durp);
     double after_ec = now();
     cm.update(this_moment, durp);
@@ -366,7 +369,7 @@ void *controlLoop(void */*unused_param*/)  // NOLINT(readability/casting)
     timespecInc(tick, g_options.period);
 
     struct timespec before;
-    clock_gettime(CLOCK_REALTIME, &before);
+    clock_gettime(CLOCK_MONOTONIC, &before);
     if ((before.tv_sec + static_cast<double>(before.tv_nsec) / SEC_2_NSEC) >
         (tick.tv_sec + static_cast<double>(tick.tv_nsec) / SEC_2_NSEC))
     {
@@ -397,11 +400,11 @@ void *controlLoop(void */*unused_param*/)  // NOLINT(readability/casting)
     }
 
     // Sleep until end of g_options.period
-    clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &tick, NULL);
+    clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &tick, NULL);
 
     // Calculate RT loop jitter
     struct timespec after;
-    clock_gettime(CLOCK_REALTIME, &after);
+    clock_gettime(CLOCK_MONOTONIC, &after);
     double jitter = (after.tv_sec - tick.tv_sec + static_cast<double>(after.tv_nsec - tick.tv_nsec) / SEC_2_NSEC);
 
     g_stats.jitter_acc(jitter);
