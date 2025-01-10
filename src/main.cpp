@@ -454,6 +454,11 @@ int main(int argc, char *argv[])
     {
       break;
     }
+    else if (n.hasParam("/robot_description")) // This will allow namespaced nodes to work with a global robot_description
+    {
+      break;
+    }
+
     if (ros::Time::now().toSec() - start_time.toSec() >= TIME_BEFORE_INFO)
     {
       ROS_INFO_STREAM("Still waiting for parameter robot description");
