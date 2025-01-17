@@ -79,6 +79,7 @@ static struct
   char *program_;
   bool stats_;
   int period;  // Period in nanoseconds
+  string node_namespace;
 }
 g_options;
 
@@ -165,7 +166,12 @@ static void publishDiagnostics(RealtimePublisher<diagnostic_msgs::DiagnosticArra
     status.addf("Last Overrun Loop Time (us)", "%.2f", g_stats.overrun_loop_sec * SEC_2_USEC);
     status.addf("Realtime Loop Frequency (Hz)", "%.4f", g_stats.rt_loop_frequency);
 
-    status.name = "Realtime Control Loop";
+    string name_prefix;
+    if (!g_options.node_namespace.empty())
+    {
+      name_prefix = g_options.node_namespace + " ";
+    }
+    status.name = name_prefix + "Realtime Control Loop";
     if (g_stats.overruns > 0 && g_stats.last_overrun < 30)
     {
       if (g_stats.last_severe_overrun < 30)
@@ -500,7 +506,13 @@ int main(int argc, char *argv[])
   if (optind < argc)
     Usage("Extra arguments");
 
-  ros::NodeHandle node;
+  g_options.node_namespace = n.getNamespace();
+  // Remove leading slash if not empty. This will leave the variable empty if the namespace is "/"
+  // (i.e. node not namespaced).
+  if (!g_options.node_namespace.empty() && g_options.node_namespace[0] == '/')
+  {
+    g_options.node_namespace.erase(0, 1);
+  }
 
   // Catch attempts to quit
   signal(SIGTERM, quitRequested);
