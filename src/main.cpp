@@ -4,7 +4,7 @@
  *  Copyright (c) 2008, Willow Garage, Inc.
  *  All rights reserved.
  *
- *  Modified 2016-2018, 2020, 2022, by Shadow Robot Company Ltd.
+ *  Modified 2016-2018, 2020, 2022, 2025 by Shadow Robot Company Ltd.
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions
@@ -460,7 +460,8 @@ int main(int argc, char *argv[])
     {
       break;
     }
-    else if (n.hasParam("/robot_description")) // This will allow namespaced nodes to work with a global robot_description
+    // This will allow namespaced nodes to work with a global robot_description
+    else if (n.hasParam("/robot_description"))
     {
       break;
     }
